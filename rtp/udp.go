@@ -3,41 +3,46 @@ package main
 import (
 	"net"
 	"time"
-	"encoding/hex"
+	//"encoding/hex"
 	"./rtp"
 	log "github.com/astaxie/beego/logs"
 )
 
 func handleAudioConnection(conn *net.UDPConn) {
-
+	rtpParser := rtp.NewParser(4096)
+	
 	for {
 		log.Debug("on message")
 
-		buffer := make([]byte, 1024)
-		n, remoteAddr, err := conn.ReadFromUDP(buffer)
+		n, remoteAddr, err := conn.ReadFromUDP(rtpParser.Buffer())
 		if err != nil {
 			log.Error("failed to read UDP msg because of ", err.Error())
 			return
 		}
+		rtpParser.SetPacketLength(n);
 
-		parser := rtp.NewParser(buffer, n)
-
-		log.Debug("recv ", n, " message from ", remoteAddr, ": ", hex.EncodeToString(buffer))
+		log.Debug("recv ", n, " message from ", remoteAddr)//, ": ", hex.EncodeToString(rtpParser.Buffer()))
+		rtpParser.Print("rtp audio");
 	}
 }
 
 func handleVedioConnection(conn *net.UDPConn) {
+	rtpParser := rtp.NewParser(4096)
+
 	for {
 		log.Debug("on message")
 
-		buffer := make([]byte, 1024)
-		n, remoteAddr, err := conn.ReadFromUDP(buffer)
+		n, remoteAddr, err := conn.ReadFromUDP(rtpParser.Buffer())
 		if err != nil {
 			log.Error("failed to read UDP msg because of ", err.Error())
 			return
 		}
+		rtpParser.SetPacketLength(n);
 
-		log.Debug("recv ", n, " message from ", remoteAddr, ": ", buffer)
+		log.Debug("recv ", n, " message from ", remoteAddr)//, ": ", hex.EncodeToString(rtpParser.Buffer()))
+		rtpParser.Print("rtp vedio");
+
+		conn.WriteToUDP(rtpParser.Buffer()[0:n], &net.UDPAddr{IP: net.ParseIP("192.168.0.78"), Port: 1234})
 	}
 }
 

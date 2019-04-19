@@ -12,8 +12,6 @@ const (
 
 const (
     markerPtOffset   = 1
-    packetTypeOffset = 1
-    lengthOffset     = 2
     sequenceOffset   = 2
     timestampOffset  = sequenceOffset + 2
     ssrcOffsetRtp    = timestampOffset + 4
@@ -47,12 +45,12 @@ type RtpParser interface {
 
 type RawPacket struct {
     buffer   []byte
-    PacketLength int
 }
 
-//! SolaRtpParser
+//! RtpParser
 type Parser struct{
     RawPacket
+    PacketLength int
 }
 
 // Buffer returns the internal buffer in raw format.
@@ -60,10 +58,16 @@ type Parser struct{
 // or decrypt the buffer.
 // Always call Buffer() just before the the buffer is actually used because several packet 
 // handling functions may re-allocate buffers.
-func NewParser(message []byte, length int) *Parser {
-    var par Parser
-    par = {message[0:length], length}
-    return &par
+func NewParser(size int) *Parser {
+    return &Parser{RawPacket{make([]byte, size)}, 0}
+}
+
+func (raw *RawPacket) Buffer() []byte {
+    return raw.buffer
+}
+
+func (rp *Parser) SetPacketLength(len int) {
+    rp.PacketLength = len
 }
 
 // Version returns the version number.
